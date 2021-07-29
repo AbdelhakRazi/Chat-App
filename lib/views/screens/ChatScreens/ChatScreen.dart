@@ -18,18 +18,33 @@ class ChatScreen extends StatefulWidget {
     this.email,
     this.uid,
   });
-  TextEditingController messagectl = new TextEditingController();
   _ChatScreenState createState() => _ChatScreenState();
 }
 
 class _ChatScreenState extends State<ChatScreen> {
   @override
+  ScrollController _scrollController;
+  TextEditingController messagectl;
+  void initState() {
+    _scrollController = ScrollController();
+    super.initState();
+    messagectl = new TextEditingController();
+  }
+
+  void dispose() {
+    messagectl.dispose();
+    super.dispose();
+  }
+
   FocusNode _node = FocusNode();
   Chat _chat = new Chat();
   Auth _auth = new Auth();
   Message msg = new Message();
+  String text;
+
   Widget build(BuildContext context) {
     final scwidth = MediaQuery.of(context).size.width;
+    final scheight = MediaQuery.of(context).size.height;
     final user = Provider.of<User>(context);
     final us1mail = user.email;
     final us2mail = widget.email;
@@ -45,7 +60,6 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     return Scaffold(
-      //bottomNavigationBar:
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
         actions: [
@@ -56,7 +70,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 Navigator.pushReplacement(
                     context,
                     Routes.onGenerateRoute(
-                        RouteSettings(name: AppRoutes.choose)));
+                        RouteSettings(name: AppRoutes.login)));
               })
         ],
       ),
@@ -65,50 +79,57 @@ class _ChatScreenState extends State<ChatScreen> {
           builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
             if (snapshot.hasData) {
               print(snapshot.data.docs.length);
-              print(chatidCreation());
-              return CustomScrollView(
-                slivers: [
-                  SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                    (context, int index) {
-                      return UnconstrainedBox(
-                        alignment: Alignment(
-                            snapshot.data.docs[index]["by"] == widget.email
-                                ? -0.8
-                                : 0.8,
-                            0),
-                        child: Container(
-                          padding: EdgeInsets.only(
-                              left: 10, right: 10, top: 10, bottom: 10),
-                          constraints: BoxConstraints(
-                            maxWidth: scwidth * 0.7,
-                          ),
-                          decoration: BoxDecoration(
-                              color: snapshot.data.docs[index]["by"] ==
-                                      widget.email
-                                  ? AppColors.grey
-                                  : AppColors.msgcolor,
-                              borderRadius: BorderRadius.circular(20)),
-                          margin: EdgeInsets.only(bottom: 10),
-                          child: Text(
-                            snapshot.data.docs[index]["message"],
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyText2
-                                .copyWith(
-                                    fontSize: 18,
-                                    color: snapshot.data.docs[index]["by"] ==
-                                            widget.email
-                                        ? AppColors.backgrd
-                                        : AppColors.white),
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: ListView.builder(
+                        reverse: true,
+                        physics: ScrollPhysics(),
+                        shrinkWrap: true,
+                        scrollDirection: Axis.vertical,
+                        itemBuilder: (context, int index) {
+                          return buildMessageBubble(
+                              snapshot, index, scwidth, context);
+                        },
+                        itemCount: snapshot.data.docs.length,
+                      ),
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Stack(
+                      children: [
+                        buildTextFieldsendmessage(context, user),
+                        Positioned(
+                          right: 10,
+                          top: 5,
+                          child: IconButton(
+                            highlightColor: AppColors.field,
+                            icon: AppIcons.snd,
+                            onPressed: () async {
+                              _node.unfocus();
+                              if (messagectl.text.isNotEmpty) {
+                                msg.message = messagectl.text;
+                                msg.sender = user.email;
+                                msg.time = DateTime.now();
+                                await _chat.sendMessage(
+                                  msg,
+                                  user.email,
+                                  widget.email,
+                                );
+                                messagectl.clear();
+                                msg.message = null;
+                              }
+                            },
                           ),
                         ),
-                      );
-                    },
-                    childCount: snapshot.data.docs.length,
-                  )),
-                  SliverToBoxAdapter(
-                      child: buildTextFieldsendmessage(context, user)),
+                      ],
+                    ),
+                  ),
                 ],
               );
             } else {
@@ -118,12 +139,41 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  UnconstrainedBox buildMessageBubble(AsyncSnapshot<QuerySnapshot> snapshot,
+      int index, double scwidth, BuildContext context) {
+    return UnconstrainedBox(
+      alignment: Alignment(
+          snapshot.data.docs[index]["by"] == widget.email ? -0.8 : 0.8, 0),
+      child: Container(
+        padding: EdgeInsets.only(left: 10, right: 10, top: 10, bottom: 10),
+        constraints: BoxConstraints(
+          maxWidth: scwidth * 0.7,
+        ),
+        decoration: BoxDecoration(
+            color: snapshot.data.docs[index]["by"] == widget.email
+                ? AppColors.grey
+                : AppColors.msgcolor,
+            borderRadius: BorderRadius.circular(20)),
+        margin: EdgeInsets.only(bottom: 10),
+        child: Text(
+          snapshot.data.docs[index]["message"],
+          style: Theme.of(context).textTheme.bodyText2.copyWith(
+              fontSize: 18,
+              color: snapshot.data.docs[index]["by"] == widget.email
+                  ? AppColors.backgrd
+                  : AppColors.white),
+        ),
+      ),
+    );
+  }
+
   TextField buildTextFieldsendmessage(BuildContext context, User user) {
     return TextField(
-      textInputAction: TextInputAction.newline,
+      focusNode: _node,
+      maxLines: null,
       cursorColor: AppColors.white,
       style: Theme.of(context).textTheme.bodyText2,
-      controller: widget.messagectl,
+      controller: messagectl,
       decoration: InputDecoration(
         fillColor: AppColors.msgcolor,
         enabledBorder: OutlineInputBorder(
@@ -134,15 +184,6 @@ class _ChatScreenState extends State<ChatScreen> {
           borderSide: BorderSide.none,
         ),
         hintText: "Enter your message",
-        suffixIcon: IconButton(
-          icon: AppIcons.snd,
-          onPressed: () async {
-            msg.message = widget.messagectl.text;
-            msg.sender = user.email;
-            msg.time = DateTime.now();
-            _chat.sendMessage(msg, user.email, widget.email);
-          },
-        ),
       ),
     );
   }

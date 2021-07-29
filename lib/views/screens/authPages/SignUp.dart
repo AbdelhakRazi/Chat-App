@@ -79,7 +79,12 @@ class _SignUpState extends State<SignUp> {
                                         child:
                                             buildAlertDialog(result, context));
                                   } else {
-                                    Navigator.pop(context);
+                                    // Navigator.pop(context);
+                                    Navigator.pushAndRemoveUntil(
+                                        context,
+                                        Routes.onGenerateRoute(RouteSettings(
+                                            name: AppRoutes.search)),
+                                        (e) => false);
                                   }
                                 }
                               }

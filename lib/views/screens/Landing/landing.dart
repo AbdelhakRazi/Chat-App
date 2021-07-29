@@ -52,8 +52,7 @@ class Landing extends StatelessWidget {
                       color: AppColors.butcolor,
                       textcolor: AppColors.white,
                       func: () {
-                        return Navigator.push(
-                            context,
+                        return Navigator.of(context).push(
                             Routes.onGenerateRoute(
                                 RouteSettings(name: AppRoutes.signup)));
                       }),
@@ -64,8 +63,7 @@ class Landing extends StatelessWidget {
                     text: "Login",
                     factor: 0.6,
                     scheight: scheight,
-                    func: () => Navigator.push(
-                        context,
+                    func: () => Navigator.of(context).push(
                         Routes.onGenerateRoute(
                             RouteSettings(name: AppRoutes.login))),
                   ),

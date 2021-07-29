@@ -28,10 +28,11 @@ class _SearchScreenState extends State<SearchScreen> {
               icon: Icon(Icons.logout),
               onPressed: () async {
                 await _auth.signOut();
-                Navigator.pushReplacement(
+                Navigator.pushAndRemoveUntil(
                     context,
                     Routes.onGenerateRoute(
-                        RouteSettings(name: AppRoutes.choose)));
+                        RouteSettings(name: AppRoutes.login)),
+                    (e) => false);
               })
         ],
       ),

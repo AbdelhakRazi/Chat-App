@@ -40,6 +40,9 @@ class Chat {
 
   Stream<QuerySnapshot> showMessages(String chatid) {
     var snapshot = _firestore.collection("chatroom").doc(chatid);
-    return snapshot.collection("messages").orderBy("time").snapshots();
+    return snapshot
+        .collection("messages")
+        .orderBy("time", descending: true)
+        .snapshots();
   }
 }

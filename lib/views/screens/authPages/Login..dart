@@ -18,14 +18,14 @@ class _LoginState extends State<Login> {
   @override
   final _formkey = new GlobalKey<FormState>();
   Auth _auth = new Auth();
+  void dispose() {
+    widget.emailctl.dispose();
+    widget.passwordctl.dispose();
+    super.dispose();
+  }
 
   Widget build(BuildContext context) {
     final scheight = MediaQuery.of(context).size.height;
-    void dispose() {
-      widget.emailctl.dispose();
-      widget.passwordctl.dispose();
-      super.dispose();
-    }
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -84,7 +84,12 @@ class _LoginState extends State<Login> {
                                         child:
                                             buildAlertDialog(result, context));
                                   } else {
-                                    Navigator.pop(context);
+                                    //Navigator.pop(context);
+                                    Navigator.pushAndRemoveUntil(
+                                        context,
+                                        Routes.onGenerateRoute(RouteSettings(
+                                            name: AppRoutes.search)),
+                                        (e) => false);
                                   }
                                 }
                               }
